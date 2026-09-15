@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b14">
+<meta name="description" content="LETReady — offline LET reviewer with practice tests, spaced repetition and progress analytics.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LETReady">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/styles.css">
+<title>LETReady — LET preparation coach</title>
+</head>
+
+<body data-theme="dark">
+
+<!-- ============ SPLASH ============ -->
+<div class="splash" id="splashScreen">
+  <div class="splash-logo"><img src="icons/icon-192.png" alt="" onerror="this.parentElement.textContent='🎓'"></div>
+  <div class="splash-title">LETReady</div>
+  <div class="splash-sub">Your LET preparation coach</div>
+  <div class="splash-bar"><div></div></div>
+</div>
+
+
+<!-- ============ AUTH ============ -->
+<div class="auth" id="authScreen">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="brand-logo"><img src="icons/icon-192.png" alt="" onerror="this.parentElement.textContent='🎓'"></div>
+      <div><strong>LETReady</strong><span>Licensure Examination for Teachers</span></div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Sign in</button>
+        <button class="auth-tab" data-tab="signup" onclick="switchAuthTab('signup')">Sign up</button>
+      </div>
+
+      <h1 id="authHeading">Welcome back</h1>
+      <p class="lede" id="authLede">Sign in to pick up your review where you left it.</p>
+
+      <div class="auth-error" id="authError"></div>
+
+      <!-- Sign in -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input class="form-control" id="loginEmail" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="pw-wrap">
+            <input class="form-control" id="loginPassword" type="password" autocomplete="current-password" placeholder="Your password"
+                   onkeydown="if(event.key==='Enter') doLogin()">
+            <button class="pw-toggle" type="button" aria-label="Show password" onclick="togglePw('loginPassword', this)">👁️</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" id="loginBtn" onclick="doLogin()">Sign in</button>
+      </div>
+
+      <!-- Sign up -->
+      <div id="signupForm" class="hidden">
+        <div class="form-group">
+          <label for="signupName">Name</label>
+          <input class="form-control" id="signupName" type="text" autocomplete="name" placeholder="Juan Dela Cruz">
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input class="form-control" id="signupEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <div class="pw-wrap">
+            <input class="form-control" id="signupPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters"
+                   oninput="checkStrength(this.value)" onkeydown="if(event.key==='Enter') doSignup()">
+            <button class="pw-toggle" type="button" aria-label="Show password" onclick="togglePw('signupPassword', this)">👁️</button>
+          </div>
+          <div class="strength"><div id="pwStrengthBar"></div></div>
+          <small class="hint">Mix letters, numbers and a symbol to make it stronger.</small>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" id="signupBtn" onclick="doSignup()">Create account</button>
+      </div>
+
+      <div class="divider">or</div>
+      <button class="btn btn-secondary btn-full" onclick="continueAsGuest()">Continue as guest</button>
+      <div class="auth-alt">Accounts and progress are stored on this device only.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ ONBOARDING ============ -->
+<div class="auth" id="onboarding">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="onb-steps" id="onbSteps"></div>
+      <div id="onbBody"></div>
+      <div style="display:flex; gap:8px; margin-top:22px;">
+        <button class="btn btn-secondary hidden" id="onbBack" style="flex:0 0 100px;" onclick="onbBack()">Back</button>
+        <button class="btn btn-primary btn-lg" id="onbNext" style="flex:1" onclick="onbNext()">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="brand" onclick="navigate('home')" aria-label="Home">
+        <div class="brand-logo"><img src="icons/icon-192.png" alt="" onerror="this.parentElement.textContent='🎓'"></div>
+        <div class="brand-text"><strong>LETReady</strong><span>Keep going, you are close</span></div>
+      </button>
+      <div class="header-actions">
+        <span class="offline-chip" id="offlineChip">Offline</span>
+        <button class="icon-btn" id="themeBtn" onclick="cycleTheme()" aria-label="Change theme">🌙</button>
+        <button class="icon-btn" onclick="navigate('settings')" aria-label="Settings">⚙️</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== HOME ===== -->
+    <section id="homePage" class="page active">
+      <div class="install-banner" id="installBanner">
+        <div style="flex:1"><strong>Install LETReady</strong><p>Add it to your home screen and it works without a connection.</p></div>
+        <button class="btn btn-primary" style="min-height:38px;padding:0 13px;" onclick="installApp()">Install</button>
+        <button class="btn btn-ghost" style="min-height:38px;padding:0 6px;" onclick="dismissInstall()" aria-label="Dismiss">✕</button>
+      </div>
+
+      <h1 class="page-title" id="greeting">Hello</h1>
+      <p class="page-subtitle">Here is where your preparation stands today.</p>
+
+      <div class="dashboard-layout">
+        <div>
+          <div class="hero">
+            <div class="hero-top">
+              <div>
+                <h2>LET readiness</h2>
+                <p>Your accuracy, coverage of the question bank and study consistency together read as <strong id="readinessWord">getting started</strong>.</p>
+              </div>
+              <div class="score-ring" id="scoreRing">
+                <div class="score-value"><strong id="scoreValue">0%</strong><span>ready</span></div>
+              </div>
+            </div>
+            <div class="hero-bottom">
+              <span class="pill" id="streakPill">🔥 0-day streak</span>
+              <span class="pill" id="weakPill">🎯 0 weak topics</span>
+              <span class="pill" id="duePill">🔁 0 due for review</span>
+            </div>
+          </div>
+
+          <div class="countdown" id="countdown"></div>
+
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon">📝</div><strong id="statQuestions">0</strong><span>Questions answered</span></div>
+            <div class="stat-card"><div class="stat-icon">🎯</div><strong id="statAccuracy">0%</strong><span>Overall accuracy</span></div>
+            <div class="stat-card"><div class="stat-icon">⏱️</div><strong id="statTime">0m</strong><span>Study time</span></div>
+            <div class="stat-card"><div class="stat-icon">🔥</div><strong id="statStreak">0</strong><span>Day streak</span></div>
+          </div>
+
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">Today's goal</h2>
+              <span class="pill" id="goalPct">0% done</span>
+            </div>
+            <div class="goal-card">
+              <div class="goal-head"><strong id="goalHeadline">Nothing logged today yet</strong><span id="goalCount">0 of 30 questions</span></div>
+              <div class="progress"><div id="goalBar" style="width:0%"></div></div>
+              <div class="goal-items">
+                <div class="goal-item"><strong id="goalQ">0</strong><span>Questions</span></div>
+                <div class="goal-item"><strong id="goalMin">0m</strong><span>Study time</span></div>
+                <div class="goal-item"><strong id="goalStreak">🔥 0</strong><span>Streak</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-header"><h2 class="section-title">Do this next</h2></div>
+            <div class="recommendation">
+              <div class="recommendation-icon">⚡</div>
+              <div style="flex:1">
+                <strong id="recTitle">Take your first practice session</strong>
+                <p id="recBody">Ten questions is enough to start reading your strengths.</p>
+              </div>
+              <button class="btn btn-primary" id="recBtn" style="min-height:38px;padding:0 13px;">Start</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:24px;">
+          <div class="section-header">
+            <h2 class="section-title">By subject</h2>
+            <button class="see-all" onclick="navigate('progress')">Full analytics</button>
+          </div>
+          <div class="subject-grid" id="subjectGrid"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== REVIEW ===== -->
+    <section id="reviewPage" class="page">
+      <h1 class="page-title">Review</h1>
+      <p class="page-subtitle">Read the concept first, then practise it.</p>
+
+      <div class="segment" id="reviewSegment">
+        <button class="active" data-tab="topics" onclick="setReviewTab('topics')">Topics</button>
+        <button data-tab="cards" onclick="setReviewTab('cards')">Flashcards</button>
+      </div>
+
+      <div class="search">
+        🔍 <input type="search" id="reviewSearch" placeholder="Search topics" oninput="filterTopics(this.value)">
+      </div>
+
+      <div id="reviewContent" style="margin-top:15px;"></div>
+    </section>
+
+
+    <!-- ===== LESSON ===== -->
+    <section id="lessonPage" class="page">
+      <button class="btn btn-ghost" style="padding:0;min-height:36px;" onclick="navigate('review')">← Back to review</button>
+      <h1 class="page-title" id="lessonTitle">Topic</h1>
+      <p class="page-subtitle" id="lessonSubtitle"></p>
+      <div id="lessonBody"></div>
+      <button class="btn btn-primary btn-full btn-lg" id="lessonPracticeBtn" style="margin-top:16px;">Practise this topic</button>
+    </section>
+
+
+    <!-- ===== FLASHCARDS ===== -->
+    <section id="flashcardsPage" class="page">
+      <button class="btn btn-ghost" style="padding:0;min-height:36px;" onclick="navigate('review')">← Back to review</button>
+      <h1 class="page-title">Flashcards</h1>
+      <p class="page-subtitle" id="cardCounter">1 of 1</p>
+
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="flashcard-inner">
+          <div class="flashcard-face" id="cardFront"></div>
+          <div class="flashcard-face back" id="cardBack"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" style="flex:1" onclick="prevCard()">Previous</button>
+        <button class="btn btn-secondary" style="flex:0 0 52px" onclick="shuffleCards()" aria-label="Shuffle">🔀</button>
+        <button class="btn btn-primary" style="flex:1" onclick="nextCard()">Next</button>
+      </div>
+      <p style="color:var(--muted);font-size:12px;text-align:center;margin-top:14px;">Tap the card to flip it.</p>
+    </section>
+
+
+    <!-- ===== PRACTICE ===== -->
+    <section id="practicePage" class="page">
+      <h1 class="page-title">Practice</h1>
+      <p class="page-subtitle">Pick the session that matches the time you have.</p>
+
+      <div class="mode-grid">
+        <button class="mode-card" onclick="openPractice('quick')"><div class="mode-icon">⚡</div><strong>Quick practice</strong><p>A short set with the explanation after every answer.</p></button>
+        <button class="mode-card" onclick="openPractice('smart')"><div class="mode-icon">🔁</div><strong>Smart review</strong><p>Spaced repetition brings items back right before you forget them.</p><p id="dueBadge" style="color:var(--primary);font-weight:700;">0 due</p></button>
+        <button class="mode-card" onclick="openPractice('weak')"><div class="mode-icon">🎯</div><strong>Weak topics</strong><p>Drills built from the topics pulling your score down.</p></button>
+        <button class="mode-card" onclick="openPractice('bank')"><div class="mode-icon">📚</div><strong>Question bank</strong><p>Filter by subject and difficulty and practise anything.</p></button>
+        <button class="mode-card" onclick="openPractice('test')"><div class="mode-icon">⏱️</div><strong>Practice test</strong><p>Timed, no feedback until you finish.</p></button>
+        <button class="mode-card" onclick="openPractice('mock')"><div class="mode-icon">🧪</div><strong>Mock LET</strong><p>Full simulation across every subject in your track.</p></button>
+        <button class="mode-card" onclick="navigate('mistakes')"><div class="mode-icon">❌</div><strong>My mistakes</strong><p>Every question you have missed, kept until you get it right.</p><p id="mistakeBadge" style="color:var(--danger);font-weight:700;">0 saved</p></button>
+        <button class="mode-card" onclick="navigate('bookmarks')"><div class="mode-icon">🔖</div><strong>Bookmarks</strong><p>The items you flagged to come back to.</p></button>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><h2 class="section-title">Recent sessions</h2></div>
+        <div class="analytics-card" id="recentPracticeCard"></div>
+      </div>
+    </section>
+
+
+    <!-- ===== PROGRESS ===== -->
+    <section id="progressPage" class="page">
+      <h1 class="page-title">Progress</h1>
+      <p class="page-subtitle">What is working, and what still needs time.</p>
+
+      <div class="result-card">
+        <div class="result-label">LET readiness score</div>
+        <div class="result-score" id="progressScore">0</div>
+        <div class="result-label">out of 100</div>
+        <div class="result-status" id="progressStatus">Getting started</div>
+      </div>
+
+      <div class="section">
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>Questions per day</strong><span>Last 7 days</span></div>
+          <div class="bars" id="weekBars"></div>
+          <div class="goal-items" style="margin-top:16px;">
+            <div class="goal-item"><strong id="weekQuestions">0</strong><span>Questions</span></div>
+            <div class="goal-item"><strong id="weekTime">0m</strong><span>Study time</span></div>
+            <div class="goal-item"><strong id="weekAccuracy">0%</strong><span>Accuracy</span></div>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>Accuracy trend</strong><span>Last 14 days</span></div>
+          <div id="trendSpark"></div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>By subject</strong><span>All time</span></div>
+          <div id="progressSubjects"></div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>Topic mastery</strong><span id="masteryCount">0 topics started</span></div>
+          <div class="metric-row">
+            <div class="metric-label"><span>Strong, 80% and up</span><span><b id="masteryStrong">0</b> topics</span></div>
+            <div class="progress"><div id="masteryStrongBar" style="width:0%;background:linear-gradient(90deg,var(--success),var(--cyan));"></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label"><span>Developing, 60 to 79%</span><span><b id="masteryDev">0</b> topics</span></div>
+            <div class="progress"><div id="masteryDevBar" style="width:0%;background:linear-gradient(90deg,var(--warning),var(--primary));"></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label"><span>Needs work, under 60%</span><span><b id="masteryWeak">0</b> topics</span></div>
+            <div class="progress"><div id="masteryWeakBar" style="width:0%;background:linear-gradient(90deg,var(--danger),var(--warning));"></div></div>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>Every topic, weakest first</strong><span>Tap Review to study</span></div>
+          <div id="topicBreakdown"></div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-head"><strong>Milestones</strong><span>All time</span></div>
+          <div class="metric-row"><div class="metric-label"><span>Longest streak</span><span id="bestStreak">0 days</span></div></div>
+          <div class="metric-row"><div class="metric-label"><span>Question bank covered</span><span id="coverage">0 of 0</span></div></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== MISTAKES ===== -->
+    <section id="mistakesPage" class="page">
+      <button class="btn btn-ghost" style="padding:0;min-height:36px;" onclick="navigate('practice')">← Back to practice</button>
+      <h1 class="page-title">My mistakes</h1>
+      <p class="page-subtitle">A question leaves this list once you answer it correctly.</p>
+
+      <div class="recommendation">
+        <div class="recommendation-icon">💡</div>
+        <div><strong id="mistakeCountText">Nothing to review right now</strong>
+          <p>Drilling missed items is the fastest way to raise a weak topic.</p></div>
+      </div>
+
+      <div style="margin-top:15px;" id="mistakesList"></div>
+    </section>
+
+
+    <!-- ===== BOOKMARKS ===== -->
+    <section id="bookmarksPage" class="page">
+      <button class="btn btn-ghost" style="padding:0;min-height:36px;" onclick="navigate('profile')">← Back to profile</button>
+      <h1 class="page-title">Bookmarks</h1>
+      <p class="page-subtitle">Questions you saved during practice.</p>
+      <div id="bookmarksList"></div>
+    </section>
+
+
+    <!-- ===== PROFILE ===== -->
+    <section id="profilePage" class="page">
+      <h1 class="page-title">Profile</h1>
+      <p class="page-subtitle">Your account, your track and how the app behaves.</p>
+
+      <div class="profile-card">
+        <div class="avatar" id="profileAvatar">LR</div>
+        <h2 id="profileName">Reviewer</h2>
+        <p id="profileEmail"></p>
+        <div style="margin-top:14px;"><span class="pill" id="profileTrack">🎓 Secondary</span>
+          <span class="pill"><b id="statTotalDays">0</b> active days</span></div>
+
+        <div class="theme-switch">
+          <button class="theme-opt" data-t="dark" onclick="setTheme('dark')">
+            <div class="swatch" style="background:linear-gradient(135deg,#0d1322,#070b14)"></div>Dark</button>
+          <button class="theme-opt" data-t="light" onclick="setTheme('light')">
+            <div class="swatch" style="background:linear-gradient(135deg,#ffffff,#e9edf5);border:1px solid #ddd;"></div>Light</button>
+          <button class="theme-opt" data-t="neu" onclick="setTheme('neu')">
+            <div class="swatch" style="background:#e6e9f0;box-shadow:inset 2px 2px 4px #c5c9d3,inset -2px -2px 4px #fff;"></div>Soft</button>
+        </div>
+      </div>
+
+      <div class="recommendation hidden" id="guestNotice" style="margin-top:12px;">
+        <div class="recommendation-icon">👤</div>
+        <div><strong>You are using a guest session</strong>
+          <p>Progress is saved on this device. Create an account in Settings to keep it separate from other users.</p></div>
+      </div>
+
+      <div class="profile-menu">
+        <button class="profile-item" onclick="navigate('settings')"><span>⚙️</span><span>Settings</span><small>›</small></button>
+        <button class="profile-item" onclick="navigate('bookmarks')"><span>🔖</span><span>Bookmarks</span><small id="bookmarkBadge"></small></button>
+        <button class="profile-item" onclick="navigate('mistakes')"><span>❌</span><span>My mistakes</span><small>›</small></button>
+        <button class="profile-item" onclick="exportProgress()"><span>⬇️</span><span>Export my progress</span><small>JSON</small></button>
+        <label class="profile-item" style="cursor:pointer;"><span>⬆️</span><span>Restore from a file</span>
+          <input type="file" accept="application/json" class="hidden" onchange="importProgress(this)"></label>
+        <button class="profile-item" onclick="installApp()"><span>📲</span><span>Install on this device</span><small>›</small></button>
+        <button class="profile-item" onclick="logout()"><span>🚪</span><span>Sign out</span><small>›</small></button>
+      </div>
+    </section>
+
+
+    <!-- ===== SETTINGS ===== -->
+    <section id="settingsPage" class="page">
+      <button class="btn btn-ghost" style="padding:0;min-height:36px;" onclick="navigate('profile')">← Back to profile</button>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Everything here is saved on this device.</p>
+
+      <div class="analytics-card">
+        <div class="analytics-head"><strong>Your exam</strong><span>Shapes your review</span></div>
+        <div class="form-group">
+          <label for="setName">Display name</label>
+          <input class="form-control" id="setName" type="text">
+        </div>
+        <div class="form-group">
+          <label for="setTrack">Track</label>
+          <select class="form-control" id="setTrack" onchange="onTrackChange()">
+            <option value="elem">Elementary</option>
+            <option value="sec">Secondary</option>
+          </select>
+        </div>
+        <div class="form-group" id="majorGroup">
+          <label for="setMajor">Major</label>
+          <select class="form-control" id="setMajor"></select>
+        </div>
+        <div class="field-row">
+          <div class="form-group">
+            <label for="setExamDate">Exam date</label>
+            <input class="form-control" id="setExamDate" type="date">
+          </div>
+          <div class="form-group">
+            <label for="setGoal">Daily goal</label>
+            <input class="form-control" id="setGoal" type="number" min="5" max="300" step="5">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveSettings()">Save changes</button>
+      </div>
+
+      <div class="analytics-card">
+        <div class="analytics-head"><strong>App behaviour</strong><span></span></div>
+        <div class="profile-item" style="border:0;padding:0;min-height:48px;">
+          <span>📳</span><span>Vibration feedback</span>
+          <div class="switch" id="soundSwitch" onclick="toggleSetting('sound', this)"></div>
+        </div>
+        <div class="profile-item" style="border:0;padding:0;min-height:48px;">
+          <span>🔔</span><span>Study reminders</span>
+          <div class="switch" id="reminderSwitch" onclick="toggleSetting('reminders', this)"></div>
+        </div>
+      </div>
+
+      <div class="analytics-card">
+        <div class="analytics-head"><strong>Your data</strong><span>Stored on this device</span></div>
+        <button class="btn btn-secondary btn-full" style="margin-bottom:8px;" onclick="exportProgress()">Export progress</button>
+        <button class="btn btn-secondary btn-full" style="margin-bottom:8px;" onclick="resetProgress()">Clear all progress</button>
+        <button class="btn btn-danger btn-full" onclick="deleteAccount()">Delete this account</button>
+      </div>
+
+      <p style="color:var(--muted);font-size:11px;text-align:center;margin:18px 0 0;">LETReady 2.0 · Works offline</p>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home" onclick="navigate('home')"><span class="nav-icon">🏠</span><span>Home</span></button>
+    <button class="nav-btn" data-page="review" onclick="navigate('review')"><span class="nav-icon">📚</span><span>Review</span></button>
+    <button class="nav-btn" data-page="practice" onclick="navigate('practice')"><span class="nav-icon">📝</span><span>Practice</span></button>
+    <button class="nav-btn" data-page="progress" onclick="navigate('progress')"><span class="nav-icon">📊</span><span>Progress</span></button>
+    <button class="nav-btn" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">👤</span><span>Profile</span></button>
+  </nav>
+</div>
+
+
+<!-- ============ PRACTICE CONFIG ============ -->
+<div id="practiceModal" class="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="modalTitle">Start practice</h2>
+    <p class="modal-subtitle" id="modalSubtitle">Set up your session.</p>
+
+    <div class="form-group" id="cfgSubjectGroup">
+      <label for="cfgSubject">Subject</label>
+      <select class="form-control" id="cfgSubject"></select>
+    </div>
+
+    <div class="form-group">
+      <label for="cfgCount">Questions</label>
+      <select class="form-control" id="cfgCount">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="all">Everything available</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="cfgDifficultyGroup">
+      <label for="cfgDifficulty">Difficulty</label>
+      <select class="form-control" id="cfgDifficulty">
+        <option value="all" selected>Mixed</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="cfgTime">Time limit</label>
+      <select class="form-control" id="cfgTime">
+        <option value="0" selected>No limit</option>
+        <option value="300">5 minutes</option>
+        <option value="600">10 minutes</option>
+        <option value="1200">20 minutes</option>
+        <option value="1800">30 minutes</option>
+        <option value="3600">1 hour</option>
+      </select>
+    </div>
+
+    <label class="profile-item" style="margin-bottom:16px;">
+      <span>💡</span><span>Show the answer after each question</span>
+      <input type="checkbox" id="cfgFeedback" checked style="width:20px;height:20px;accent-color:var(--primary);">
+    </label>
+
+    <button class="btn btn-primary btn-full btn-lg" onclick="startConfiguredSession()">Start session</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:6px;" onclick="closePractice()">Cancel</button>
+  </div>
+</div>
+
+
+<!-- ============ TEST ============ -->
+<div id="testScreen" class="test-screen">
+  <div class="test-header">
+    <button class="icon-btn" onclick="exitSession()" aria-label="Leave session">✕</button>
+    <div class="test-progress">
+      <div class="question-number">Question <span id="questionNumber">1</span> of <span id="questionTotal">10</span></div>
+      <div class="progress"><div id="questionProgress" style="width:10%"></div></div>
+    </div>
+    <div class="timer" id="timer">∞</div>
+  </div>
+
+  <div class="question-body">
+    <div class="question-meta">
+      <span class="pill" id="qSubjectPill"></span>
+      <span class="pill" id="qTopicPill"></span>
+      <span class="pill" id="qDifficultyPill"></span>
+    </div>
+    <div class="question-text" id="questionText"></div>
+    <div class="choices" id="choices"></div>
+    <div class="explain-box" id="explainBox"></div>
+  </div>
+
+  <div class="test-footer">
+    <button class="btn btn-secondary" onclick="previousQuestion()">Previous</button>
+    <button class="btn btn-secondary bookmark-btn" id="bookmarkBtn" onclick="toggleBookmark()">🔖 Save</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next</button>
+  </div>
+</div>
+
+
+<!-- ============ RESULTS ============ -->
+<div id="resultScreen" class="test-screen">
+  <div class="question-body" style="padding-top:calc(34px + env(safe-area-inset-top));">
+    <div class="result-card">
+      <div class="result-label">Session score</div>
+      <div class="result-score" id="finalScore">0</div>
+      <div class="result-label">out of 100</div>
+      <div class="result-status" id="finalStatus">Solid session</div>
+      <div class="result-breakdown">
+        <div><strong id="finalCorrect" style="color:var(--success)">0</strong><span>Correct</span></div>
+        <div><strong id="finalWrong" style="color:var(--danger)">0</strong><span>Missed</span></div>
+        <div><strong id="finalTime">0:00</strong><span>Time used</span></div>
+      </div>
+      <p style="color:var(--muted);font-size:11px;margin:16px 0 0;" id="finalNote"></p>
+    </div>
+
+    <div class="analytics-card" style="margin-top:14px;">
+      <div class="analytics-head"><strong>Answer sheet</strong><span>Tap any item to reread it</span></div>
+      <div class="sheet-grid" id="answerSheet"></div>
+    </div>
+
+    <button class="btn btn-primary btn-full btn-lg" onclick="closeResults('practice')">Back to practice</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeResults('progress')">See full analytics</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:4px;" onclick="closeResults('mistakes')">Review what I missed</button>
+  </div>
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

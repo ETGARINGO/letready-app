@@ -1,0 +1,23 @@
+{
+  "name": "LETReady — LET preparation coach",
+  "short_name": "LETReady",
+  "description": "Offline reviewer for the Licensure Examination for Teachers: practice tests, spaced repetition and progress analytics.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "lang": "en-PH",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Quick practice", "url": "./index.html#quick", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Smart review", "url": "./index.html#smart", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
